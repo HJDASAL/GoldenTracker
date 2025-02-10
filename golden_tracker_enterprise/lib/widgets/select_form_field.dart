@@ -130,19 +130,6 @@ class _SelectFormFieldState<T> extends State<SelectFormField> {
   //   });
   // }
 
-  Future<Iterable<SearchItem>> _filterItems(
-    TextEditingValue textValue,
-  ) async {
-    if (widget.filterItemsBuilder == null) {
-      return _items;
-    }
-
-    final filteredItems = (await widget.filterItemsBuilder!(textValue.text))
-        as Iterable<SearchItem<T>>;
-
-    return filteredItems;
-  }
-
   Iterable<SearchItem> _optionsBuilder(TextEditingValue textValue) {
     if (_items.isNotEmpty || _textController.text.isEmpty) {
       return _items;

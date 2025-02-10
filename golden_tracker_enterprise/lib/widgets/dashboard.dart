@@ -249,23 +249,3 @@ class _DashboardState extends State<Dashboard> {
     return _responsiveBuild(context, ResponsiveLayout.of(context).layout);
   }
 }
-
-class _MobileView extends StatelessWidget {
-  const _MobileView(this.layout, {super.key});
-  final Layout layout;
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}
-
-class _DesktopView extends StatelessWidget {
-  const _DesktopView(this.layout, {super.key});
-  final Layout layout;
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
-  }
-}

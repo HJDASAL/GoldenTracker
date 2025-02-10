@@ -59,8 +59,6 @@ class _MyAppState extends State<MyApp> {
   /// The current theme applied throughout the app
   ColorScheme _colorScheme = kLightTheme;
 
-  late final BoxCollection _localStorage;
-
   /// available themes that can be applied through out the app
   final Map<String, ColorScheme> _colorSchemes = {
     'light': kLightTheme,
@@ -87,7 +85,7 @@ class _MyAppState extends State<MyApp> {
 
   /// Opens/creates a [BoxCollection] object from [Hive] (a local storage management dependency) and registers adapters for custom defined objects
   void _initializeLocalStorage() async {
-    _localStorage = await BoxCollection.open(
+    await BoxCollection.open(
       kLocalStorageName, // Name of your database
       kLocalStorageBoxNames, // Names of your boxes
       // Path where to store your boxes (Only used in Flutter / Dart IO)

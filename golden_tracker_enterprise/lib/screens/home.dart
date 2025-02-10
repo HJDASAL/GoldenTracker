@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:golden_tracker_enterprise/widgets/index.dart';
-import '../entities/user.dart';
-import '../styles/index.dart';
 
-import '../widgets/responsive_layout.dart';
-import '../widgets/session_screen.dart';
+import '../widgets/index.dart';
+import '../styles/index.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.title = 'Home Page'});
