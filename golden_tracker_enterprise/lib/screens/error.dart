@@ -7,7 +7,10 @@ class ErrorPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('404 Page')),
-      body: Center(child: Text('Page does not exist.')),
+      body: StreamBuilder(stream: Stream.value('value'), builder: (context, snapshot) {
+        return Text(snapshot.data ?? 'No data');
+      }),
+      // body: Center(child: Text('Page does not exist.')),
     );
   }
 }

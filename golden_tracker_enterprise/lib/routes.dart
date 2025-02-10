@@ -4,9 +4,11 @@ Contains all the routes in the app in the singleton [Routes]
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:golden_tracker_enterprise/widgets/session_screen.dart';
 
 import 'models/screen.dart';
 import 'screens/index.dart';
+import 'widgets/index.dart';
 
 /// A singleton containing all the routes in the app
 class Routes {
@@ -20,18 +22,31 @@ class Routes {
   }
 
   static final List<Screen> screens = [
-    Screen(
-      builder: (context, routeState) {
-        final args = routeState.extra as Map<String, dynamic>?; // passed info
-        return HomeScreen();
+    GoScreen('/login', builder: (context, state, args) {
+      return LoginScreen(
+        initialAuthorizedLocation: '/',
+        logOutUsername: args['logOutUsername'] as String?,
+      );
+    }),
+    StatefulShellScreen(
+      '/',
+      builder: (context, state, shell, subScreens, args) {
+        return Dashboard(navigationShell: shell, subScreens: subScreens, session: args['session'] as Session,);
       },
-      path: '/',
-    ),
-    Screen(
-      builder: (context, routeState) {
-        return LoginScreen();
-      },
-      path: '/login',
+      subScreens: [
+        GoScreen(
+          '/',
+          label: 'Home',
+          icon: Icons.home,
+          builder: (context, state, args) => HomeScreen(),
+        ),
+        GoScreen(
+          '/approval',
+          label: 'Approval',
+          icon: Icons.assignment_turned_in_outlined,
+          builder: (context, state, args) => ApprovalScreen(),
+        ),
+      ],
     ),
   ];
 }

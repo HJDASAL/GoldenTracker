@@ -321,7 +321,6 @@ class _LoginScreenState extends State<LoginScreen> {
 class _LoginFormCard extends StatelessWidget {
   const _LoginFormCard(
     this.layout, {
-    super.key,
     required this.formKey,
     required this.usernameFocusNode,
     required this.passwordFocusNode,
