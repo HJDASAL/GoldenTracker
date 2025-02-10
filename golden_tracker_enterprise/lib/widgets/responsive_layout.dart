@@ -2,6 +2,7 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../styles/index.dart';
 
 const double kMobileBreakpoint = 450.0;
 const double kTabletBreakpoint = 850.0;
@@ -29,10 +30,22 @@ class ResponsiveLayout extends StatefulWidget {
 
     assert(
       inheritedContext != null,
-      'No LayoutContextProvider found in context',
+      'No LayoutProvider found in context',
     );
 
     return inheritedContext!;
+  }
+
+  static Layout layoutOf(BuildContext context) {
+    final LayoutProvider? inheritedContext =
+        context.dependOnInheritedWidgetOfExactType<LayoutProvider>();
+
+    assert(
+      inheritedContext != null,
+      'No LayoutContextProvider found in context',
+    );
+
+    return inheritedContext!.layout;
   }
 }
 
@@ -45,7 +58,7 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
     super.initState();
 
     _colorSchemes = widget.colorSchemes.isEmpty
-        ? {'light': Theme.of(context).colorScheme}
+        ? {'light': kLightTheme}
         : widget.colorSchemes;
 
     _layout = Layout(
@@ -54,6 +67,7 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
       platform: Platform.of(context),
       gestureDevice: GestureDevice.unknown,
       colorSchemeName: widget.initialColorScheme,
+      size: Size(kTabletBreakpoint, kMobileBreakpoint),
     );
   }
 
@@ -94,6 +108,7 @@ class _ResponsiveLayoutState extends State<ResponsiveLayout> {
       _layout = _layout.copyWith(
         deviceType: deviceType,
         orientation: mediaQuery.orientation,
+        size: mediaQuery.size,
       );
     });
   }
@@ -153,6 +168,7 @@ class Layout {
     required this.platform,
     required this.gestureDevice,
     required this.colorSchemeName,
+    required this.size,
   });
 
   final DeviceType deviceType;
@@ -160,6 +176,7 @@ class Layout {
   final Platform platform;
   final GestureDevice gestureDevice;
   final String colorSchemeName;
+  final Size size;
 
   Layout copyWith({
     DeviceType? deviceType,
@@ -167,6 +184,7 @@ class Layout {
     Platform? platform,
     GestureDevice? gestureDevice,
     String? colorSchemeName,
+    Size? size,
   }) {
     return Layout(
       deviceType: deviceType ?? this.deviceType,
@@ -174,6 +192,7 @@ class Layout {
       platform: platform ?? this.platform,
       gestureDevice: gestureDevice ?? this.gestureDevice,
       colorSchemeName: colorSchemeName ?? this.colorSchemeName,
+      size: size ?? this.size,
     );
   }
 }
