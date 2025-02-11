@@ -12,13 +12,13 @@ class BarGraphData {
   late final Map<String, Color> legends;
 
   BarGraphData(
-      this.barGroups, {
-        required this.title,
-        this.barWidth = 16,
-        Map<String, Color> legends = const {},
-        this.xAxisTitle,
-        this.yAxisTitle,
-      }) {
+    this.barGroups, {
+    required this.title,
+    this.barWidth = 16,
+    Map<String, Color> legends = const {},
+    this.xAxisTitle,
+    this.yAxisTitle,
+  }) {
     Iterable<String> legendKeys = legends.keys;
     this.legends = {};
 
@@ -104,24 +104,24 @@ class BarGroup {
   List<BarRod> get barRods => _barRods;
 
   BarChartGroupData toChartWidget(
-      int index, {
-        required Map<String, Color> legends,
-        double width = 16,
-        double? maxY,
-        int? matchRodTotal,
-      }) {
+    int index, {
+    required Map<String, Color> legends,
+    double width = 16,
+    double? maxY,
+    int? matchRodTotal,
+  }) {
     int totalRods = max(_barRods.length, matchRodTotal ?? 0);
     int originalTotalRods = _barRods.length;
 
     maxY = maxY ?? this.maxY;
     List<BarChartRodData> barRods = List.generate(
       originalTotalRods,
-          (i) {
+      (i) {
         final BarRod rod = _barRods[i];
         Color? rodColor = legends[rod.label];
         List<BarChartRodStackItem> barRodStacks = List.generate(
           rod.rodStacks.length,
-              (j) {
+          (j) {
             Color? stackColor = legends[rod.rodStacks[j].label];
             return rod.rodStacks[j].toChartWidget(
               color: stackColor ?? rodColor,
@@ -158,9 +158,9 @@ class BarGroup {
           if ((_barRods[i].toY / maxY).abs() < 0.25) (i + paddingStart),
       ],
       barRods: List.filled(
-        paddingStart,
-        _kProxyBarRod.toChartWidget(width: width),
-      ) +
+            paddingStart,
+            _kProxyBarRod.toChartWidget(width: width),
+          ) +
           barRods +
           List.filled(
             paddingEnd,
@@ -207,7 +207,6 @@ class BarRod {
   const BarRod({
     required this.label,
     required this.toY,
-    // this.primaryColor,
     this.rodStacks = const [],
     this.fromY = 0,
     this.width = 16,
@@ -238,11 +237,11 @@ class BarRodStackItem {
   final Color? color;
 
   const BarRodStackItem(
-      this.fromY,
-      this.toY, {
-        required this.label,
-        this.color,
-      });
+    this.fromY,
+    this.toY, {
+    required this.label,
+    this.color,
+  });
 
   BarChartRodStackItem toChartWidget({Color? color}) {
     return BarChartRodStackItem(fromY, toY, color ?? Colors.grey);
