@@ -31,14 +31,20 @@ class Routes {
     StatefulShellScreen(
       '/',
       builder: (context, state, shell, subScreens, args) {
-        return Dashboard(navigationShell: shell, subScreens: subScreens, session: args['session'] as Session,);
+        return Dashboard(
+          navigationShell: shell,
+          subScreens: subScreens,
+          session: args['session'] as Session,
+        );
       },
       subScreens: [
         GoScreen(
           '/',
           label: 'Home',
           icon: Icons.home,
-          builder: (context, state, args) => HomeScreen(),
+          builder: (context, state, args) {
+            return HomeScreen(session: args['session'] as Session);
+          },
         ),
         GoScreen(
           '/approval',
