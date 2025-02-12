@@ -4,7 +4,6 @@ Contains all the routes in the app in the singleton [Routes]
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:golden_tracker_enterprise/widgets/session_screen.dart';
 
 import 'models/screen.dart';
 import 'screens/index.dart';
@@ -44,6 +43,7 @@ class Routes {
           icon: Icons.home,
           builder: (context, state, args) {
             return HomeScreen(session: args['session'] as Session);
+            // return HomeScreen();
           },
         ),
         GoScreen(

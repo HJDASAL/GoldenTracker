@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       _startSession(
         Session(
-          token: 'session.token',
+          token: session.token,
           expiresOn: session.expiresOn,
           autoRefresh: session.autoRefresh,
           user: EmployeeUser(

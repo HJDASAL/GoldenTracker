@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:golden_tracker_enterprise/styles/colors.dart';
 
 import '../secret.dart' show kAppName;
 
@@ -143,6 +144,6 @@ class StatefulShellScreen extends Screen {
 void setScreenTitle(String title, BuildContext context) {
   SystemChrome.setApplicationSwitcherDescription(ApplicationSwitcherDescription(
     label: title,
-    primaryColor: Theme.of(context).primaryColor.value, // This line is required
+    primaryColor: kPrimary.value, // This line is required
   ));
 }

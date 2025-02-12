@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:golden_tracker_enterprise/widgets/bar_graph.dart';
-import 'package:golden_tracker_enterprise/widgets/session_screen.dart';
+import 'dart:async';
+import 'dart:math' show Random;
 
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../models/http_request.dart' as http;
 import '../widgets/index.dart';
 import '../styles/index.dart';
+
+import '../secret.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.session});
@@ -15,16 +20,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-
+  /// Controller for report tabs
   late final TabController _tabController = TabController(
     length: 3,
     vsync: this,
   );
 
-  final DateTime _earliestDate = DateTime(2018);
+  final DateFormat _noahDateFormatter = DateFormat('MM/dd/yyyy');
 
+  final DateTime _earliestDate = DateTime(2018);
   late DateTime _fromDate;
   late DateTime _toDate;
+  List<String>? _selectedProjects;
+
+  List _inventoryData = [];
+
+  List<Report> _salesReports = [];
+  List<Report> _invetoryReports = [];
+  List<Report> _priceReports = [];
 
   final List<SearchItem<String?>> _projects = [
     SearchItem(title: 'City Clou', value: 'CC'),
@@ -34,6 +47,11 @@ class _HomeScreenState extends State<HomeScreen>
     SearchItem(title: 'All Projects', value: null),
   ];
 
+  final StreamController<List> _salesStreamController =
+      StreamController<List>.broadcast();
+
+  Stream<List> get _salesData => _salesStreamController.stream;
+
   @override
   void initState() {
     _toDate = DateTime.now();
@@ -42,32 +60,103 @@ class _HomeScreenState extends State<HomeScreen>
       month: 1,
       day: 1,
     );
+
+    _retrieveReports();
+
     super.initState();
   }
 
-  // Future fetchSalesData(String accessToken) async {
-  //   final url = Uri.https(
-  //     'noah.goldentopper.com',
-  //     '/GT_NOAHAPI_UAT/API/Get/RESBSalesReservationRpt',
-  //   );
-  //
-  //   var salesData = await http.requestJson(
-  //       url,
-  //       method: http.RequestMethod.get,
-  //       headers: {
-  //         'apiKey': '$kNoahApiKey-RESBSalesReservationRpt',
-  //         'secretkey': kNoahSecretKey,
-  //         'access_token': accessToken,
-  //       },
-  //       body: {
-  //         'date_filter': '4',
-  //         'date_from': '01/01/2024',
-  //         'date_to': '12/31/2024',
-  //       }
-  //   );
-  //
-  //   print('Sales: $salesData');
-  // }
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  void _retrieveReports() async {
+    final data = await _fetchSalesData();
+    _salesReports = [
+      ReportType.monthlySales.generate(data, _fromDate, _toDate)!
+    ];
+
+    _salesStreamController.sink.add(data);
+  }
+
+  Future<List> _fetchSalesData() async {
+    final url = Uri.https(
+      'noah.goldentopper.com',
+      '/GT_NOAHAPI_UAT/API/Get/RESBSalesReservationRpt',
+    );
+
+    String fromFormat = _noahDateFormatter.format(_fromDate);
+    String toFormat = _noahDateFormatter.format(_toDate);
+
+    dynamic sales = await http.requestJson(
+      url,
+      method: http.RequestMethod.post,
+      headers: {
+        'apiKey': '$kNoahApiKey-RESBSalesReservationRpt',
+        'secretkey': kNoahReportSecretKey,
+        'access_token': widget.session.token,
+      },
+      body: {
+        'date_filter': '4',
+        'date_value': '',
+        'date_from': fromFormat,
+        'date_to': toFormat,
+        'location_filter': '',
+        'rsv_ctrl_no_filter': '',
+        'unit_filter': '',
+        'project_filter': (_selectedProjects?.join('|')) ?? '',
+        'customer_filter': '',
+        'seller_filter': '',
+        'account_status_filter': '003|004|005|006|007|012|013',
+        'with_payment': '1',
+        'without_payment': ''
+      },
+    );
+
+    sales = sales['data']['Main'] as List;
+
+    sales.sort((a, b) {
+      return a['reservation_date'].toString().compareTo(b['reservation_date']);
+    });
+
+    return sales;
+  }
+
+  void _fetchInventoryData() async {
+    final url = Uri.https(
+      'noah.goldentopper.com',
+      '/GT_NOAHAPI_UAT/API/Get/REIVUnitInventoryStatusRpt',
+    );
+
+    String fromFormat = _noahDateFormatter.format(_fromDate);
+    String toFormat = _noahDateFormatter.format(_toDate);
+
+    var inventory = await http.requestJson(
+      url,
+      method: http.RequestMethod.post,
+      headers: {
+        'apiKey': '$kNoahApiKey-REIVUnitInventoryStatusRpt',
+        'secretkey': kNoahReportSecretKey,
+        'access_token': widget.session.token,
+      },
+      body: {
+        "as_of_date": toFormat,
+        "location": "",
+        "project_filter": "",
+        "tower_filter": "",
+        "unit_filter": "",
+        "inventory_type_filter": "",
+        "inventory_group_filter": "",
+        "inventory_class_filter": "",
+        "item_status_filter": "",
+        "record_status_filter": ""
+      },
+    );
+
+    _inventoryData = inventory['data']['Main'];
+    print(_inventoryData);
+  }
 
   PreferredSizeWidget _appBarBuilder(BuildContext context, Layout layout) {
     return AppBar(
@@ -81,7 +170,9 @@ class _HomeScreenState extends State<HomeScreen>
       toolbarHeight: 56,
       actions: [
         IconButton(
-          onPressed: () {},
+          onPressed: () => setState(() {
+            _retrieveReports();
+          }),
           icon: Icon(Icons.refresh),
         ),
         SizedBox(width: 12),
@@ -102,11 +193,7 @@ class _HomeScreenState extends State<HomeScreen>
       lastDate: _toDate,
       selectedDate: _fromDate,
       dropdown: dropdown,
-      onDateChanged: (date) {
-        setState(() {
-          _fromDate = date;
-        });
-      },
+      onDateChanged: (date) => _fromDate = date,
     );
   }
 
@@ -117,11 +204,7 @@ class _HomeScreenState extends State<HomeScreen>
       lastDate: DateTime.now(),
       selectedDate: _toDate,
       dropdown: dropdown,
-      onDateChanged: (date) {
-        setState(() {
-          _toDate = date;
-        });
-      },
+      onDateChanged: (date) =>_toDate = date,
     );
   }
 
@@ -142,11 +225,6 @@ class _HomeScreenState extends State<HomeScreen>
                     label: 'Project',
                     items: _projects,
                     enableSearch: false,
-                    // filterItemsBuilder: (text) {
-                    //   RegExp matchRegex = RegExp(text, caseSensitive: false);
-                    //   return _projects
-                    //       .where((proj) => matchRegex.hasMatch(proj.title));
-                    // },
                   ),
                 ),
                 SizedBox(width: 12),
@@ -193,6 +271,32 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _salesReportBuilder(context, AsyncSnapshot<List> snapshot) {
+    final sales = snapshot.data;
+
+    if (snapshot.hasError) {
+      return Center(child: Icon(Icons.error_outline));
+    }
+
+    ConnectionState state = snapshot.connectionState;
+
+    switch (state) {
+      case ConnectionState.none:
+        return Center(child: Text('No data'));
+      case ConnectionState.waiting:
+        return Center(child: CircularProgressIndicator());
+      default:
+        return _SalesReportView(
+          reports: [
+            ReportType.monthlySales
+                .generate(sales!, _fromDate, _toDate)!
+          ],
+          fromDate: _fromDate,
+          toDate: _toDate,
+        );
+    }
+  }
+
   Widget _responsiveBuild(BuildContext context, Layout layout) {
     return Scaffold(
       appBar: _appBarBuilder(context, layout),
@@ -214,9 +318,12 @@ class _HomeScreenState extends State<HomeScreen>
       ],
       body: TabBarView(
         controller: _tabController,
-        children: const [
+        children: [
           // Sales report
-          _SalesReportView(),
+          StreamBuilder<List>(
+            stream: _salesData,
+            builder: _salesReportBuilder,
+          ),
           // Inventory report
           SingleChildScrollView(
             child: Column(
@@ -240,52 +347,35 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
+enum SalesReport {
+  monthlySales,
+  totalMonthlySales;
+}
+
 class _SalesReportView extends StatelessWidget {
-  const _SalesReportView({super.key});
+  _SalesReportView({
+    required this.reports,
+    required this.fromDate,
+    required this.toDate,
+    this.projectCode,
+  });
+  
+  @override
+  Key? get key => Key(Random().nextDouble().toString());
+
+  final String? projectCode;
+  final DateTime fromDate;
+  final DateTime toDate;
+  final List<Report> reports;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         child: Column(
-          children: [
-            // Text('Sales report'),
-            BarGraph(
-              title: 'Monthly Sales',
-              data: BarGraphData(
-                barGroups: [
-                  BarGroup(
-                    label: 'JAN',
-                    barRods: [SolidBarRod(label: 'Sales', toY: 15)],
-                  ),
-                  BarGroup(
-                    label: 'FEB',
-                    barRods: [SolidBarRod(label: 'Sales', toY: 15)],
-                  ),
-                  BarGroup(
-                    label: 'MAR',
-                    barRods: [SolidBarRod(label: 'Sales', toY: 15)],
-                  ),
-                  BarGroup(
-                    label: 'APR',
-                    barRods: [SolidBarRod(label: 'Sales', toY: 15)],
-                  ),
-                  BarGroup(
-                    label: 'JUN',
-                    barRods: [SolidBarRod(label: 'Sales', toY: 15)],
-                  ),
-                ],
-                legends: {'Sales': Colors.green},
-              ),
-            ),
-            BarGraph(
-              title: 'Daily Sales',
-              data: BarGraphData(
-                barGroups: [],
-                legends: {},
-              ),
-            ),
-          ],
+          children: List.generate(reports.length, (i) {
+            return reports[i].toGraphWidget();
+          }),
         ),
       ),
     );
