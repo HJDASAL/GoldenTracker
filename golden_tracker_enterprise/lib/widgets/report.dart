@@ -8,24 +8,25 @@ abstract class Report {
   final DateTime toDate;
   final String title;
 
-  const Report({
+  Report({
     required this.title,
     required this.fromDate,
     required this.toDate,
   });
 
-  Map<String, Color> get _legends;
+  final Map<String, Color> _legends = {};
 
   Widget toGraphWidget();
 }
 
-enum ReportType {
+enum SalesReport {
   monthlySales,
-  totalSales;
+  salesPerInventory,
+  yearlySalesOverall;
 
   Report? generate(List data, DateTime fromDate, DateTime toDate) {
     switch (this) {
-      case ReportType.monthlySales:
+      case SalesReport.monthlySales:
         return _MonthlySalesReport(
           sales: data,
           fromDate: fromDate,
@@ -59,9 +60,17 @@ class _MonthlySalesReport implements Report {
   }) {
     // Compute monthly sales
     Map<String, double> monthlySales = {};
+
     final DateFormat dateFormatter = DateFormat(
       fromDate.year != toDate.year ? 'MMM yyyy' : 'MMM',
     );
+
+    DateTime startDate = DateTime(fromDate.year, fromDate.month);
+
+    while(startDate.isBefore(toDate)) {
+      monthlySales[dateFormatter.format(startDate)] = 0;
+      startDate = startDate.copyWith(month: startDate.month + 1);
+    }
 
     for (var sale in sales) {
       DateTime date = DateTime.parse(sale['reservation_date']);

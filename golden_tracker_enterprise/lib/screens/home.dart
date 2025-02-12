@@ -33,10 +33,8 @@ class _HomeScreenState extends State<HomeScreen>
   late DateTime _toDate;
   List<String>? _selectedProjects;
 
-  List _inventoryData = [];
-
   List<Report> _salesReports = [];
-  List<Report> _invetoryReports = [];
+  List<Report> _inventoryReports = [];
   List<Report> _priceReports = [];
 
   final List<SearchItem<String?>> _projects = [
@@ -51,6 +49,11 @@ class _HomeScreenState extends State<HomeScreen>
       StreamController<List>.broadcast();
 
   Stream<List> get _salesData => _salesStreamController.stream;
+
+  final StreamController<List> _inventoryStreamController =
+  StreamController<List>.broadcast();
+
+  Stream<List> get _inventoryData => _inventoryStreamController.stream;
 
   @override
   void initState() {
@@ -68,16 +71,28 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    if (!_salesStreamController.isClosed) {
+      _salesStreamController.close();
+    }
+
+    if (!_inventoryStreamController.isClosed) {
+      _inventoryStreamController.close();
+    }
     super.dispose();
   }
 
   void _retrieveReports() async {
-    final data = await _fetchSalesData();
+    final salesData = await _fetchSalesData();
     _salesReports = [
-      ReportType.monthlySales.generate(data, _fromDate, _toDate)!
+      SalesReport.monthlySales.generate(salesData, _fromDate, _toDate)!
     ];
 
-    _salesStreamController.sink.add(data);
+    _salesStreamController.sink.add(salesData);
+
+    final inventoryData = await _fetchInventoryData();
+    // _inventoryReports = [];
+
+    _inventoryStreamController.sink.add(inventoryData);
   }
 
   Future<List> _fetchSalesData() async {
@@ -86,8 +101,8 @@ class _HomeScreenState extends State<HomeScreen>
       '/GT_NOAHAPI_UAT/API/Get/RESBSalesReservationRpt',
     );
 
-    String fromFormat = _noahDateFormatter.format(_fromDate);
-    String toFormat = _noahDateFormatter.format(_toDate);
+    String fromFormat = _noahDateFormatter.format(_earliestDate);
+    String toFormat = _noahDateFormatter.format(DateTime.now());
 
     dynamic sales = await http.requestJson(
       url,
@@ -123,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen>
     return sales;
   }
 
-  void _fetchInventoryData() async {
+  Future<List> _fetchInventoryData() async {
     final url = Uri.https(
       'noah.goldentopper.com',
       '/GT_NOAHAPI_UAT/API/Get/REIVUnitInventoryStatusRpt',
@@ -154,8 +169,7 @@ class _HomeScreenState extends State<HomeScreen>
       },
     );
 
-    _inventoryData = inventory['data']['Main'];
-    print(_inventoryData);
+    return inventory['data']['Main'];
   }
 
   PreferredSizeWidget _appBarBuilder(BuildContext context, Layout layout) {
@@ -288,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen>
       default:
         return _SalesReportView(
           reports: [
-            ReportType.monthlySales
+            SalesReport.monthlySales
                 .generate(sales!, _fromDate, _toDate)!
           ],
           fromDate: _fromDate,
@@ -309,6 +323,9 @@ class _HomeScreenState extends State<HomeScreen>
               ? TabAlignment.fill
               : TabAlignment.center,
           labelPadding: EdgeInsets.symmetric(horizontal: 20),
+          onTap: (index) {
+            _retrieveReports();
+          },
           tabs: [
             Tab(text: 'Property Sales'),
             Tab(text: 'Inventory'),
@@ -347,13 +364,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-enum SalesReport {
-  monthlySales,
-  totalMonthlySales;
-}
-
 class _SalesReportView extends StatelessWidget {
-  _SalesReportView({
+  const _SalesReportView({
     required this.reports,
     required this.fromDate,
     required this.toDate,

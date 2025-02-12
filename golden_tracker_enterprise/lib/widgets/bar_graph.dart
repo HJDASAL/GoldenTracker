@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -64,17 +63,7 @@ class BarGroup {
       x: index,
       barsSpace: barSpace,
       barRods: List.generate(barRods.length, (i) {
-        final barRod = barRods.elementAt(i);
-        // if (barRod.runtimeType == StackedBarRod) {
-        //   return BarChartRodData(
-        //     toY: barRod.toY,
-        //     rodStackItems: [
-        //       BarChartRodStackItem(0, 4, Colors.blue),
-        //       BarChartRodStackItem(4, barRod.toY, Colors.orange),
-        //     ],
-        //   );
-        // }
-        return barRod.toChartWidget(legends);
+        return barRods.elementAt(i).toChartWidget(legends);
       }),
     );
   }
@@ -269,7 +258,7 @@ class _BarGraphState extends State<BarGraph> {
                 : _barSpace,
           );
         }),
-        maxY: _maxY + pow(10, _maxYDecimalPlace - 1),
+        maxY: _maxY * 1.1,
         minY: (_minY < 0) ? _minY - 1 : 0,
         titlesData: FlTitlesData(
           leftTitles: _xAxisTitlesBuilder(),
@@ -316,7 +305,7 @@ class _BarGraphState extends State<BarGraph> {
       //   minHeight: 500,
       //   maxHeight: layout.size.height - 172,
       // ),
-      height: max(540, layout.size.height - 172),
+      height: max(540, layout.size.height - 210),
       padding: EdgeInsets.all(12),
       child: Flex(
         direction: Axis.vertical,
@@ -327,16 +316,16 @@ class _BarGraphState extends State<BarGraph> {
           ),
           SizedBox(height: 12),
           Expanded(child: _chartBuilder()),
-          Slider(
-            activeColor: kPrimaryContainer,
-            inactiveColor: kPrimaryContainer,
-            // secondaryActiveColor: kSecondary,
-            thumbColor: kPrimary,
-            value: _scrollPosition,
-            onChanged: (value) => setState(() {
-              _scrollPosition = value;
-            }),
-          ),
+          // Slider(
+          //   activeColor: kPrimaryContainer,
+          //   inactiveColor: kPrimaryContainer,
+          //   // secondaryActiveColor: kSecondary,
+          //   thumbColor: kPrimary,
+          //   value: _scrollPosition,
+          //   onChanged: (value) => setState(() {
+          //     _scrollPosition = value;
+          //   }),
+          // ),
         ],
       ),
     );
