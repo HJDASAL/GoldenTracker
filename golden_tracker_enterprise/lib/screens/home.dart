@@ -10,6 +10,13 @@ import '../styles/index.dart';
 
 import '../secret.dart';
 
+const Map<String, String> kProjectNames = {
+  'CC': 'City Clou',
+  'ES': 'El Sol',
+  'LV': 'La Vida',
+  'PO': 'Park One',
+};
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.session});
   final Session session;
@@ -28,21 +35,19 @@ class _HomeScreenState extends State<HomeScreen>
 
   final DateFormat _noahDateFormatter = DateFormat('MM/dd/yyyy');
 
-  final DateTime _earliestDate = DateTime(2018);
+  final DateTime _earliestDate = DateTime(2019);
   late DateTime _fromDate;
   late DateTime _toDate;
   List<String>? _selectedProjects;
+
+  String? _selectedProject;
 
   List<Report> _salesReports = [];
   List<Report> _inventoryReports = [];
   List<Report> _priceReports = [];
 
-  final List<SearchItem<String?>> _projects = [
-    SearchItem(title: 'City Clou', value: 'CC'),
-    SearchItem(title: 'El Sol', value: 'EL'),
-    SearchItem(title: 'La Vida', value: 'LV'),
-    SearchItem(title: 'Park One', value: 'PO'),
-    SearchItem(title: 'All Projects', value: null),
+  final List<SearchItem<String>> _projects = [
+    SearchItem(title: 'All Projects', value: ''),
   ];
 
   final StreamController<List> _salesStreamController =
@@ -51,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen>
   Stream<List> get _salesData => _salesStreamController.stream;
 
   final StreamController<List> _inventoryStreamController =
-  StreamController<List>.broadcast();
+      StreamController<List>.broadcast();
 
   Stream<List> get _inventoryData => _inventoryStreamController.stream;
 
@@ -65,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     _retrieveReports();
-
     super.initState();
   }
 
@@ -81,10 +85,48 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  void _setProjects(List inventoryData) {
+    Map<String, List<String>> projects = {};
+
+    for (int i = 0; i < inventoryData.length; i++) {
+      String crossCode = inventoryData[i]['cross_reference_code'].toString();
+      String newProjCode = inventoryData[i]['code'];
+
+      if (crossCode.isEmpty || !newProjCode.endsWith('UT')) {
+        continue;
+      }
+
+      String proj = newProjCode.substring(0, 2);
+      List? projCodes = projects[proj];
+
+      if (projCodes == null) {
+        projects[proj] = [newProjCode];
+      } else if (!projCodes.contains(newProjCode)) {
+        projects[proj]!.add(newProjCode);
+      }
+    }
+
+    Iterable<String> keys = projects.keys;
+    _projects.addAll(List.generate(
+      projects.length,
+      (i) {
+        String proj = keys.elementAt(i);
+        return SearchItem(
+            title: kProjectNames[proj] ?? 'Unknown',
+            value: projects[proj]!.join('|'));
+      },
+    ));
+  }
+
   void _retrieveReports() async {
     final salesData = await _fetchSalesData();
     _salesReports = [
-      SalesReport.monthlySales.generate(salesData, _fromDate, _toDate)!
+      SalesReport.monthlySales.generate(salesData, _fromDate, _toDate),
+      SalesReport.yearlySalesOverall.generate(
+        salesData,
+        _earliestDate,
+        DateTime.now(),
+      ),
     ];
 
     _salesStreamController.sink.add(salesData);
@@ -92,17 +134,23 @@ class _HomeScreenState extends State<HomeScreen>
     final inventoryData = await _fetchInventoryData();
     // _inventoryReports = [];
 
+    if (_projects.length <= 1) {
+      _setProjects(inventoryData);
+    }
+
     _inventoryStreamController.sink.add(inventoryData);
   }
 
   Future<List> _fetchSalesData() async {
     final url = Uri.https(
-      'noah.goldentopper.com',
-      '/GT_NOAHAPI_UAT/API/Get/RESBSalesReservationRpt',
+      kEnvironmentVariables['noah_domain'],
+      '/GT_NOAHAPI_${kAppEnvironment == 'prod' ? 'LIVE' : 'UAT'}/API/Get/RESBSalesReservationRpt',
     );
 
-    String fromFormat = _noahDateFormatter.format(_earliestDate);
-    String toFormat = _noahDateFormatter.format(DateTime.now());
+    String fromDate = _noahDateFormatter.format(_earliestDate);
+    String toDate = _noahDateFormatter.format(DateTime.now());
+
+    print('Projects: ${_selectedProjects?.join('|')}');
 
     dynamic sales = await http.requestJson(
       url,
@@ -115,15 +163,15 @@ class _HomeScreenState extends State<HomeScreen>
       body: {
         'date_filter': '4',
         'date_value': '',
-        'date_from': fromFormat,
-        'date_to': toFormat,
+        'date_from': fromDate,
+        'date_to': toDate,
         'location_filter': '',
         'rsv_ctrl_no_filter': '',
         'unit_filter': '',
-        'project_filter': (_selectedProjects?.join('|')) ?? '',
+        'project_filter': _selectedProject ?? '',
         'customer_filter': '',
         'seller_filter': '',
-        'account_status_filter': '003|004|005|006|007|012|013',
+        'account_status_filter': '003|004|005|006|007|011|012|013|',
         'with_payment': '1',
         'without_payment': ''
       },
@@ -140,12 +188,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<List> _fetchInventoryData() async {
     final url = Uri.https(
-      'noah.goldentopper.com',
-      '/GT_NOAHAPI_UAT/API/Get/REIVUnitInventoryStatusRpt',
+      kEnvironmentVariables['noah_domain'],
+      '/GT_NOAHAPI_${kAppEnvironment == 'prod' ? 'LIVE' : 'UAT'}/API/Get/REIVUnitInventoryStatusRpt',
     );
 
-    String fromFormat = _noahDateFormatter.format(_fromDate);
-    String toFormat = _noahDateFormatter.format(_toDate);
+    String toDate = _noahDateFormatter.format(DateTime.now());
 
     var inventory = await http.requestJson(
       url,
@@ -156,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen>
         'access_token': widget.session.token,
       },
       body: {
-        "as_of_date": toFormat,
+        "as_of_date": toDate,
         "location": "",
         "project_filter": "",
         "tower_filter": "",
@@ -207,7 +254,9 @@ class _HomeScreenState extends State<HomeScreen>
       lastDate: _toDate,
       selectedDate: _fromDate,
       dropdown: dropdown,
-      onDateChanged: (date) => _fromDate = date,
+      onDateChanged: (date) => setState(() {
+        _fromDate = date;
+      }),
     );
   }
 
@@ -218,14 +267,18 @@ class _HomeScreenState extends State<HomeScreen>
       lastDate: DateTime.now(),
       selectedDate: _toDate,
       dropdown: dropdown,
-      onDateChanged: (date) =>_toDate = date,
+      onDateChanged: (date) => setState(() {
+        _toDate = date;
+      }),
     );
   }
 
   PreferredSize _filterHeaderBuilder(BuildContext context, Layout layout) {
     return PreferredSize(
-      preferredSize:
-          Size(double.infinity, layout.deviceType.isDesktop ? 56 : 112),
+      preferredSize: Size(
+        double.infinity,
+        layout.deviceType.isDesktop ? 56 : 112,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
         child: Column(
@@ -235,10 +288,15 @@ class _HomeScreenState extends State<HomeScreen>
               direction: Axis.horizontal,
               children: [
                 Flexible(
-                  child: SelectFormField<String?>(
+                  child: SelectFormField<String>(
                     label: 'Project',
                     items: _projects,
                     enableSearch: false,
+                    onSelectItem: (item) {
+                      print(item.value);
+                      _selectedProject = item.value.isEmpty ? null : item.value;
+                      print(_selectedProject);
+                    },
                   ),
                 ),
                 SizedBox(width: 12),
@@ -300,11 +358,8 @@ class _HomeScreenState extends State<HomeScreen>
       case ConnectionState.waiting:
         return Center(child: CircularProgressIndicator());
       default:
-        return _SalesReportView(
-          reports: [
-            SalesReport.monthlySales
-                .generate(sales!, _fromDate, _toDate)!
-          ],
+        return ReportView(
+          reports: _salesReports,
           fromDate: _fromDate,
           toDate: _toDate,
         );
@@ -361,35 +416,5 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return _responsiveBuild(context, ResponsiveLayout.layoutOf(context));
-  }
-}
-
-class _SalesReportView extends StatelessWidget {
-  const _SalesReportView({
-    required this.reports,
-    required this.fromDate,
-    required this.toDate,
-    this.projectCode,
-  });
-  
-  @override
-  Key? get key => Key(Random().nextDouble().toString());
-
-  final String? projectCode;
-  final DateTime fromDate;
-  final DateTime toDate;
-  final List<Report> reports;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: Column(
-          children: List.generate(reports.length, (i) {
-            return reports[i].toGraphWidget();
-          }),
-        ),
-      ),
-    );
   }
 }

@@ -38,7 +38,7 @@ class SelectFormField<T> extends StatefulWidget {
 
   final FutureOr<Iterable<SearchItem<T>>> Function(String)? filterItemsBuilder;
 
-  final void Function(SearchItem<T>)? onSelectItem;
+  final void Function(SearchItem)? onSelectItem;
 
   final String? label;
   final bool enableSearch;
