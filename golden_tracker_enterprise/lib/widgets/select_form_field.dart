@@ -229,16 +229,13 @@ class _SelectFormFieldState<T> extends State<SelectFormField> {
                 },
               ),
       ),
-      onTap: () {
-        controller.text = controller.text;
-      },
+      // onTap: () {
+      //   controller.text = controller.text;
+      // },
       onChanged: (text) {
         if (_selectedItem != null && _selectedItem?.title != text) {
-          _selectedItem = null;
+          setState(() => _selectedItem = null);
         }
-        setState(() {
-          //
-        });
       },
     );
   }

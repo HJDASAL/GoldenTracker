@@ -112,8 +112,9 @@ class _HomeScreenState extends State<HomeScreen>
       (i) {
         String proj = keys.elementAt(i);
         return SearchItem(
-            title: kProjectNames[proj] ?? 'Unknown',
-            value: projects[proj]!.join('|'));
+          title: kProjectNames[proj] ?? 'Unknown',
+          value: projects[proj]!.join('|'),
+        );
       },
     ));
   }
@@ -122,11 +123,11 @@ class _HomeScreenState extends State<HomeScreen>
     final salesData = await _fetchSalesData();
     _salesReports = [
       SalesReport.monthlySales.generate(salesData, _fromDate, _toDate),
-      SalesReport.yearlySalesOverall.generate(
-        salesData,
-        _earliestDate,
-        DateTime.now(),
-      ),
+      // SalesReport.yearlySalesOverall.generate(
+      //   salesData,
+      //   _earliestDate,
+      //   DateTime.now(),
+      // ),
     ];
 
     _salesStreamController.sink.add(salesData);

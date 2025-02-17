@@ -62,8 +62,6 @@ Future<Map<String, dynamic>> requestJson(
     case RequestMethod.delete:
       response = await delete(uri, headers: headers).timeout(timeLimit);
       break;
-    default:
-      throw Exception('requestJson Error(1): Unknown request method, $method');
   }
 
   return decodeJson(response.body.replaceAll('\n', ''));
