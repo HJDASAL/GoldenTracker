@@ -46,7 +46,6 @@ class _YearlySalesOverall implements Report {
     required this.fromDate,
     required this.toDate,
   }) {
-
     // Compute yearly sales
     Map<int, double> yearlySales = {};
 
@@ -71,7 +70,14 @@ class _YearlySalesOverall implements Report {
       }
     }
 
-    title = 'Overall Annual Sales (${yearlySales.keys.first} - ${yearlySales.keys.last})';
+    if (yearlySales.length > 1) {
+      title =
+          'Overall Annual Sales (${yearlySales.keys.first} - ${yearlySales.keys.last})';
+    } else if (yearlySales.isNotEmpty) {
+      title = 'Overall Annual Sales (${yearlySales.keys.first})';
+    } else {
+      title = 'Overall Annual Sales';
+    }
 
     this.yearlySales = yearlySales;
   }
@@ -125,7 +131,7 @@ class _MonthlySalesReport implements Report {
 
     DateTime startDate = DateTime(fromDate.year, fromDate.month);
 
-    while (startDate.isBefore(toDate)) {
+    while (!startDate.isAfter(toDate)) {
       monthlySales[dateFormatter.format(startDate)] = 0;
       startDate = startDate.copyWith(month: startDate.month + 1);
     }
@@ -138,11 +144,6 @@ class _MonthlySalesReport implements Report {
 
       String key = dateFormatter.format(date);
 
-      // String cleanPrice =
-      //     sale['total_contract_price'].replaceAll(RegExp(r'[^\d.]'), '');
-      //
-      // double price = double.parse(cleanPrice);
-
       if (monthlySales.containsKey(key)) {
         monthlySales[key] = monthlySales[key]! + 1;
       }
@@ -154,20 +155,23 @@ class _MonthlySalesReport implements Report {
   @override
   Widget toGraphWidget() {
     Iterable<String> months = monthlySales.keys;
-    return BarGraph(
-      title: title,
-      data: BarGraphData(
-        legends: legends,
-        barGroups: List.generate(monthlySales.length, (i) {
-          String month = months.elementAt(i);
-          return BarGroup(
-            label: month,
-            barRods: [
-              SolidBarRod(label: 'Sales', toY: monthlySales[month] ?? 0)
-            ],
+    return (months.isEmpty)
+        ? Placeholder()
+        : BarGraph(
+            title: title,
+            barWidth: 24,
+            data: BarGraphData(
+              legends: legends,
+              barGroups: List.generate(monthlySales.length, (i) {
+                String month = months.elementAt(i);
+                return BarGroup(
+                  label: month,
+                  barRods: [
+                    SolidBarRod(label: 'Sales', toY: monthlySales[month] ?? 0)
+                  ],
+                );
+              }),
+            ),
           );
-        }),
-      ),
-    );
   }
 }

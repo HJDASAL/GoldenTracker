@@ -42,8 +42,12 @@ class ReportView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: List.generate(reports.length, (i) {
-            return reports[i].toGraphWidget();
+            return ConstrainedBox(
+              constraints: constraints,
+              child: reports[i].toGraphWidget(),
+            );
           }),
         ),
       ),
