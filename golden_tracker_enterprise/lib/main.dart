@@ -122,6 +122,11 @@ class _MyAppState extends State<MyApp> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
+          sliderTheme: SliderThemeData(
+            trackShape: RectangularSliderTrackShape(),
+            overlayShape: SliderComponentShape.noOverlay,
+            thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+          ),
           useMaterial3: true,
         ),
       ),
