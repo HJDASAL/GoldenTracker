@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+
+/// Error Page Sateless widget
 class ErrorPage extends StatelessWidget {
   const ErrorPage({super.key});
 
+  /// Initialize Error Page Widget
   @override
   Widget build(BuildContext context) {
     return Scaffold(

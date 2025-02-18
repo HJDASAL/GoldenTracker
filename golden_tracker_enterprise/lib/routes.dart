@@ -12,14 +12,14 @@ import 'widgets/index.dart';
 /// A singleton containing all the routes in the app
 class Routes {
   Routes._();
-
+  /// Returns error page when an error occurred
   static Widget errorScreenBuilder(
     BuildContext context,
     GoRouterState state,
   ) {
     return ErrorPage();
   }
-
+  /// List of Screen route pages
   static final List<Screen> screens = [
     GoScreen('/login', builder: (context, state, args) {
       return LoginScreen(
