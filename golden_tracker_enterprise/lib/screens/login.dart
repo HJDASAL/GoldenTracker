@@ -15,34 +15,44 @@ import '../entities/user.dart';
 
 import '../secret.dart';
 
+/// Login Screen Widget
 class LoginScreen extends StatefulWidget {
+
   const LoginScreen({
     super.key,
     required this.initialAuthorizedLocation,
     this.logOutUsername,
   });
 
+
   final String initialAuthorizedLocation;
   final String? logOutUsername;
 
+
+  /// Create State for LoginScreen Widget
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+/// Login Screen Login State
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final FocusNode _usernameFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
 
+  /// Initialize Sessions
   late final Box<HiveSession> _sessions;
 
+
+  /// Initialize variables for Login
   String _username = '';
   String _password = '';
   bool _passwordVisible = false;
   bool _keepLoggedIn = false;
   bool _loading = false;
 
+  /// Initialize State
   @override
   void initState() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -58,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Set Session Box State
   void _getSessionsBox(BuildContext context) async {
     // check if session is still valid
     if (Hive.isBoxOpen('session')) {
@@ -112,6 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
 
+    /// Check if Session Status is Success and if Context is mounted
     if (sessionData['status'] != 200 && context.mounted) {
       log('Login unsuccessful. ${sessionData['message']}');
       if (context.mounted) {
@@ -132,10 +144,12 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    /// Defining Session Data
     sessionData = sessionData['data'][0];
 
     log('$sessionData');
 
+    /// Set Session Data on successful login
     Session session = Session(
       token: sessionData['access_token'],
       user: EmployeeUser(
@@ -149,6 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
       expiresOn: DateTime.tryParse(sessionData['expires'] ?? ''),
     );
 
+
+    /// Save and Start Session
     _saveSession(session);
     _startSession(session);
   }
@@ -167,9 +183,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Saves Session to Session Box
   void _saveSession(Session session) async {
+
+    /// Define Previous Session
     HiveSession? prevSession = _sessions.get(session.user.id);
 
+    /// If previous session is null save a new Session
     if (prevSession == null) {
       await _sessions.put(
         session.user.id,
@@ -184,18 +204,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
       log('New session saved.');
     } else if (session.expiresOn != prevSession.expiresOn) {
+      /// Refresh Session Data if previous Session and new Session is not equal
       // prevSession.token = session.token;
       prevSession.autoRefresh = session.autoRefresh;
       prevSession.expiresOn = session.expiresOn;
+
+      /// Save/Update Session
       prevSession.save();
 
       log('Updated session.');
     }
   }
 
+
+  /// Checks if there is an existing Session
   void _checkExistingSession({String? username}) {
     log('Checking existing session...');
 
+
+    /// If Session box is empty return no sessions saves
     if (_sessions.isEmpty) {
       log('No sessions saved.');
       return;
@@ -204,6 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final HiveSession? session =
         (username == null) ? _sessions.getAt(0) : _sessions.get(username);
 
+
+    /// Check if session has existing sessions
     if (session == null) {
       log('No existing sessions found.');
     } else if (session.isExpired && session.autoRefresh) {
@@ -235,11 +264,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Remove Sessions from session box
   void _removeSession(String username) async {
     await _sessions.delete(username);
     log('Removed session for $username.');
   }
 
+  /// Login Widget
   Widget _responsiveBuild(BuildContext context, Layout layout) {
     return Scaffold(
       body: Stack(
@@ -318,6 +349,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+
+/// Login Form Card Widget
 class _LoginFormCard extends StatelessWidget {
   const _LoginFormCard(
     this.layout, {
@@ -348,16 +381,20 @@ class _LoginFormCard extends StatelessWidget {
   final bool passwordVisible;
   final bool rememberUser;
 
+  // Password Typing Events
   final void Function(String) onChangeUserName;
   final void Function(String) onChangePassword;
   final String? Function(String?)? onValidateUserName;
   final String? Function(String?)? onValidatePassword;
 
+  // Password Toggle Events
   final void Function(bool)? togglePasswordVisibility;
   final void Function(bool?)? toggleRememberUserCheckbox;
 
+  // Password Submit Event
   final void Function() onSubmit;
 
+  // Initialize Form Builder
   Widget _formBuilder(BuildContext context) {
     return Form(
       key: formKey,
@@ -455,6 +492,7 @@ class _LoginFormCard extends StatelessWidget {
     );
   }
 
+  /// Initialize Login Form Card Widget
   @override
   Widget build(BuildContext context) {
     return Card(
